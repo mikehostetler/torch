@@ -25,7 +25,8 @@ defmodule Mix.Tasks.Torch.Install do
       Mix.raise("mix torch.install can only be run inside an application directory")
     end
 
-    %{format: format, otp_app: otp_app} = Mix.Torch.parse_config!("torch.install", args)
+    %{format: format, template_source: template_source, otp_app: otp_app} =
+      Mix.Torch.parse_config!("torch.install", args)
 
     case Application.load(:phoenix) do
       :ok ->
@@ -42,7 +43,7 @@ defmodule Mix.Tasks.Torch.Install do
 
     phoenix_version = Application.spec(:phoenix, :vsn)
 
-    Mix.Torch.copy_from("priv/templates/#{format}", [
+    Mix.Torch.copy_from("priv/templates/#{format}", template_source, [
       {template_file(phoenix_version, format),
        "lib/#{otp_app}_web/templates/layout/torch.html.#{format}"}
     ])

@@ -40,8 +40,11 @@ plug(
 ```
 config :torch,
   otp_app: :my_app_name,
-  template_format: "eex" || "slim"
+  template_format: "eex" || "slim",
+  template_source: :local || YourAppWeb
 ```
+
+Specifying a custom `template_source` will attempt to pull the templates from your Application, if they exist. Otherwise the default Torch templates will be used.
 
 4. Run `mix torch.install`
 
@@ -100,14 +103,22 @@ You will want to update it to include your new navigation link:
 
 There may be times when you are adding Torch into an already existing system
 where your application already contains the modules and controllers and you just
-want to use the Torch admin interface.  Since the `torch.gen` mix tasks are just
+want to use the Torch admin interface. Since the `torch.gen` mix tasks are just
 wrappers around the existing `phx.gen` tasks, you can use most of the same
-flags.  To add an admin interface for `Posts` in the previous example, where the
+flags. To add an admin interface for `Posts` in the previous example, where the
 model and controller modules already exist, use the following command:
 
 ```bash
 $ mix torch.gen.html Blog Post posts --no-schema --no-context --web Admin title:string body:text published_at:datetime published:boolean views:integer
 ```
+
+**Example:**
+
+```bash
+$ mix torch.gen.html Blog Post posts --source local --no-schema --no-context --web Admin title:string body:text published_at:datetime published:boolean views:integer
+```
+
+By specifing the `--source local`
 
 ### Association filters
 
@@ -180,14 +191,14 @@ own stylesheet with the specific overrides.
 
 ## Internationalization
 
-Torch comes with `.po` files for `en`, `ru` and `es` locales.  If you are using
+Torch comes with `.po` files for `en`, `ru` and `es` locales. If you are using
 torch and can provide us with translation files for other languages, please
-submit a Pull Request with the translation file.  We'd love to add as many
+submit a Pull Request with the translation file. We'd love to add as many
 translations as possible.
 
 If you wish to add your own customized translations, you can configure Torch to
-use your own custom `MessagesBackend` and adding it in your Torch configuration 
-settings in `config.exs`. You can find the all messages that can be customized 
+use your own custom `MessagesBackend` and adding it in your Torch configuration
+settings in `config.exs`. You can find the all messages that can be customized
 in the default [i18n/backend.ex](lib/torch/i18n/backend.ex) file.
 
 If you are customizing a backend for a "standard" spoken language, please submit

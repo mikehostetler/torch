@@ -17,14 +17,15 @@ defmodule Mix.Tasks.Torch.Gen.Html do
       Mix.raise("mix torch.gen.html can only be run inside an application directory")
     end
 
-    %{format: format} = Mix.Torch.parse_config!("torch.gen.html", args)
+    %{format: format, template_source: template_source} =
+      Mix.Torch.parse_config!("torch.gen.html", args)
 
     # First, backup the projects existing templates if they exist
     Enum.each(@commands, &Mix.Torch.backup_project_templates/1)
 
     # Inject the torch templates for the generator into the priv/
     # directory so they will be picked up by the Phoenix generator
-    Enum.each(@commands, &Mix.Torch.inject_templates(&1, format))
+    Enum.each(@commands, &Mix.Torch.inject_templates(&1, format, template_source))
 
     # Run the Phoenix generator
     Mix.Task.run("phx.gen.html", args)

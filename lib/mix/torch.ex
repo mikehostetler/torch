@@ -7,6 +7,7 @@ defmodule Mix.Torch do
     {opts, _, _} = OptionParser.parse(args, switches: [format: :string, app: :string])
 
     format = opts[:format] || Config.template_format()
+    template_source = opts[:template_source] || Config.template_source()
     otp_app = opts[:app] || Config.otp_app()
 
     unless otp_app do
@@ -37,22 +38,59 @@ defmodule Mix.Torch do
       """)
     end
 
-    %{otp_app: otp_app, format: format}
+    unless template_source in ["local", :local, :torch, :phoenix] do
+      Mix.raise("""
+      Template source is invalid: #{inspect(template_source)}. Either configure it as
+      shown below or pass it via the `--template-source` option.
+
+          config :torch,
+            template_source: :local
+
+          # Alternatively
+          mix #{task} --template-source local
+
+      Supported formats: local, torch
+      """)
+    end
+
+    %{otp_app: otp_app, format: format, template_source: template_source}
   end
 
-  def copy_from(source_dir, mapping) when is_list(mapping) do
+  def copy_from(source_dir, template_source, mapping) when is_list(mapping) do
+    custom_path =
+      case template_source do
+        :local -> File.cwd!()
+        "local" -> File.cwd!()
+        _ -> Application.app_dir(template_source)
+      end
+
+    torch_path = Application.app_dir(:torch)
+
     for {source_file_path, target_file_path} <- mapping do
-      contents =
-        [Application.app_dir(:torch), source_dir, source_file_path]
+      runtime_source =
+        [custom_path, source_dir, source_file_path]
         |> Path.join()
+
+      torch_source =
+        [torch_path, source_dir, source_file_path]
+        |> Path.join()
+
+      file_source =
+        case File.exists?(runtime_source) do
+          true -> runtime_source
+          false -> torch_source
+        end
+
+      contents =
+        file_source
         |> File.read!()
 
       Mix.Generator.create_file(target_file_path, contents)
     end
   end
 
-  def inject_templates("phx.gen.html", format) do
-    copy_from("priv/templates/#{format}/phx.gen.html", [
+  def inject_templates("phx.gen.html", format, template_source) do
+    copy_from("priv/templates/#{format}/phx.gen.html", template_source, [
       {"controller_test.exs", "priv/templates/phx.gen.html/controller_test.exs"},
       {"controller.ex", "priv/templates/phx.gen.html/controller.ex"},
       {"edit.html.#{format}", "priv/templates/phx.gen.html/edit.html.#{format}"},
@@ -64,8 +102,8 @@ defmodule Mix.Torch do
     ])
   end
 
-  def inject_templates("phx.gen.context", _format) do
-    copy_from("priv/templates/phx.gen.context", [
+  def inject_templates("phx.gen.context", _format, template_source) do
+    copy_from("priv/templates/phx.gen.context", template_source, [
       {"access_no_schema.ex", "priv/templates/phx.gen.context/access_no_schema.ex"},
       {"context.ex", "priv/templates/phx.gen.context/context.ex"},
       {"schema_access.ex", "priv/templates/phx.gen.context/schema_access.ex"},
